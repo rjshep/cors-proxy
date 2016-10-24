@@ -11,7 +11,8 @@ app.use(bodyParser.json({limit: myLimit}));
 app.all('*', function (req, res, next) {
 
     // Set CORS headers: allow all origins, methods, and headers: you may want to lock this down in a production environment
-    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Origin", req.header('Origin'));
+    res.header("Access-Control-Allow-Credentials", "true");
     res.header("Access-Control-Allow-Methods", "GET, PUT, PATCH, POST, DELETE");
     res.header("Access-Control-Allow-Headers", req.header('access-control-request-headers'));
 
@@ -24,13 +25,19 @@ app.all('*', function (req, res, next) {
             res.send(500, { error: 'There is no Target-Endpoint header in the request' });
             return;
         }
-        request({ url: targetURL + req.url, method: req.method, json: req.body, headers: {'Authorization': req.header('Authorization')} },
-            function (error, response, body) {
-                if (error) {
-                    console.error('error: ' + response.statusCode)
-                }
-//                console.log(body);
-            }).pipe(res);
+    var auth=req.header('Authorization');
+    var headers;
+    if(auth) {
+        hdrs = {'Authorization': auth};
+    } else {
+        hdrs = {};
+    }
+    request({ url: targetURL + req.url, method: req.method, json: req.body, headers: hdrs  },
+        function (error, response, body) {
+            if (error) {
+                console.error('error: ' + response.statusCode)
+            }
+        }).pipe(res);
     }
 });
 
